@@ -5,11 +5,12 @@ redis module for exercise
 Compile:
 ```shell
 gcc -fPIC -std=gnu99 -c -o ex.o ex.c
+gcc -fPIC -std=gnu99 -c -o utils.o utils.c
 ```
 
 Linking:
 ```shell
-ld -o ex.so ex.o -shared -Bsymbolic -lc
+ld -o ex.so ex.o utils.o -shared -Bsymbolic -lc
 ```
 
 

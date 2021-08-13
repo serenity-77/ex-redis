@@ -1,5 +1,7 @@
 #include <stdio.h>
 #include "redismodule.h"
+#include "utils.h"
+
 
 int hincrByFloatEx_Command(RedisModuleCtx *ctx, RedisModuleString **argv, int argc)
 {
@@ -33,20 +35,15 @@ int hincrByFloatEx_Command(RedisModuleCtx *ctx, RedisModuleString **argv, int ar
     }
     else
     {
-        if(RedisModule_StringToLongDouble(curr, &value) == REDISMODULE_ERR)
+        if(redis_string_to_long_double(curr, &value) < 0)
             return RedisModule_ReplyWithError(ctx, "Invalid floating value");
 
-        if(RedisModule_StringToLongDouble(argv[3], &op) == REDISMODULE_ERR)
+        if(redis_string_to_long_double(argv[3], &op) < 0)
             return RedisModule_ReplyWithError(ctx, "Invalid floating value");
 
         result = value + (op);
 
-        char doubleString[1024];
-        int r;
-
-        r = snprintf(doubleString, 1024, "%.10Lg", result);
-
-        resultString = RedisModule_CreateString(ctx, doubleString, r);
+        resultString = long_double_to_redis_string(ctx, result);
 
         RedisModule_HashSet(key, REDISMODULE_HASH_NONE, argv[2], resultString, NULL);
     }
