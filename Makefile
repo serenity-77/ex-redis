@@ -20,4 +20,6 @@ build:
 	$(LINKER) -o $(TARGET_NAME) ex.o utils.o $(LINKER_FLAGS)
 
 clean:
-	rm $(TARGET)
+	rm -rf $(TARGET)
+	rm -rf utils.o
+	rm -rf ex.o
