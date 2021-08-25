@@ -190,7 +190,7 @@ const char *bnfp_get_error_string(int err)
         case -3:
             return "Failed to perform addition operation";
         default:
-            return "BNFP Unknown error";
+            return "BNFP Unknown Error";
     }
 }
 
@@ -513,7 +513,7 @@ void test_get_error_string()
     ASSERT(memcmp(s, "Failed to perform addition operation", strlen("Failed to perform addition operation")) == 0);
 
     s = (char *) bnfp_get_error_string(-99);
-    ASSERT(memcmp(s, "Unknown error", strlen("Unknown error")) == 0);
+    ASSERT(memcmp(s, "BNFP Unknown Error", strlen("BNFP Unknown Error")) == 0);
 }
 
 
@@ -601,7 +601,9 @@ void test_bnfp_add()
         {{"0", 0, "0"}, {"-30.002", 3, "-30.002"}, {"-30.002", 3, "-30.002"}},
         {{"5000", 0, "5000"}, {"5000", 0, "5000"}, {"10000", 0, "10000"}},
         {{"10000", 0, "10000"}, {"-0.0002", 4, "-0.0002"}, {"9999.9998", 4, "9999.9998"}},
-        {{"10000", 0, "10000"}, {"0.0002", 4, "0.0002"}, {"10000.0002", 4, "10000.0002"}}
+        {{"10000", 0, "10000"}, {"0.0002", 4, "0.0002"}, {"10000.0002", 4, "10000.0002"}},
+        {{"10000.0002", 4, "10000.0002"}, {"-0.01", 2, "-0.01"}, {"9999.9902", 4, "9999.9902"}},
+        {{"10000.0002", 4, "10000.0002"}, {"0.01", 2, "0.01"}, {"10000.0102", 4, "10000.0102"}}
     };
 
     for(i = 0; i < sizeof(args) / sizeof(args[0]); i++)
