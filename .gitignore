@@ -1,3 +1,4 @@
 *.so
 *.o
 dump.rdb
+test_obj/

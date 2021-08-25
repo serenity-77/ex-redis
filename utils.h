@@ -2,6 +2,23 @@
 #define _EX_REDIS_UTILS_H
 
 #include "redismodule.h"
+#include <stdlib.h>
+
+#define ASSERT(expr)                                        \
+    do {                                                    \
+        if(!(expr))                                         \
+        {                                                   \
+            fprintf(                                        \
+                stderr,                                     \
+                "Assertion failed in %s on line %d: %s\n",  \
+                __FILE__,                                   \
+                __LINE__,                                   \
+                # expr                                      \
+            );                                              \
+            abort();                                        \
+        }                                                   \
+    } while(0)
+
 
 #define DOUBLE_CHAR_LENGTH  1024
 

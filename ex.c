@@ -1,6 +1,11 @@
 #include <stdio.h>
+#include <string.h>
+#include <openssl/crypto.h>
 #include "redismodule.h"
-#include "utils.h"
+#include "bnfp.h"
+
+
+static RedisModuleString *hincrbyfloat_ex(RedisModuleCtx *ctx, RedisModuleString *a, RedisModuleString *b);
 
 
 int hincrByFloatEx_Command(RedisModuleCtx *ctx, RedisModuleString **argv, int argc)
@@ -35,17 +40,11 @@ int hincrByFloatEx_Command(RedisModuleCtx *ctx, RedisModuleString **argv, int ar
     }
     else
     {
-        if(redis_string_to_long_double(curr, &value) < 0)
-            return RedisModule_ReplyWithError(ctx, "Invalid floating value");
+        if((resultString = hincrbyfloat_ex(ctx, curr, argv[3])) == NULL)
+            return REDISMODULE_OK;
 
-        if(redis_string_to_long_double(argv[3], &op) < 0)
-            return RedisModule_ReplyWithError(ctx, "Invalid floating value");
-
-        result = value + (op);
-
-        resultString = long_double_to_redis_string(ctx, result);
-
-        RedisModule_HashSet(key, REDISMODULE_HASH_NONE, argv[2], resultString, NULL);
+        if(!RedisModule_HashSet(key, REDISMODULE_HASH_NONE, argv[2], resultString, NULL))
+            return RedisModule_ReplyWithError(ctx, "Failed to update hash value after bnfp operation");
     }
 
     RedisModule_ReplyWithString(ctx, resultString);
@@ -53,6 +52,81 @@ int hincrByFloatEx_Command(RedisModuleCtx *ctx, RedisModuleString **argv, int ar
     RedisModule_ReplicateVerbatim(ctx);
     return REDISMODULE_OK;
 }
+
+
+static RedisModuleString *hincrbyfloat_ex(RedisModuleCtx *ctx, RedisModuleString *a, RedisModuleString *b)
+{
+    bnfp_t *value = NULL, *op = NULL, *res = NULL;
+    char *va, *vb, *err;
+    size_t len;
+    int r;
+    RedisModuleString *resultString;
+
+    if((value = bnfp_create()) == NULL)
+    {
+        RedisModule_ReplyWithError(ctx, "Failed to create bnfp value");
+        return NULL;
+    }
+
+    if((op = bnfp_create()) == NULL)
+    {
+        err = "Failed to create bnfp op";
+        goto _err;
+    }
+
+    va = (char *) RedisModule_StringPtrLen(a, &len);
+    if((r = bnfp_from_string(value, va, len)) < 0)
+    {
+        err = (char *) bnfp_get_error_string(r);
+        goto _err;
+    }
+
+    vb = (char *) RedisModule_StringPtrLen(b, &len);
+    if((r = bnfp_from_string(op, vb, len)) < 0)
+    {
+        err = (char *) bnfp_get_error_string(r);
+        goto _err;
+    }
+
+    if((res = bnfp_create()) == NULL)
+    {
+        err = "Failed to create bnfp result";
+        goto _err;
+    }
+
+    if((r = bnfp_add(res, value, op)) < 0)
+    {
+        err = (char *) bnfp_get_error_string(r);
+        goto _err;
+    }
+
+    char *rs;
+    if((rs = bnfp_to_string(res)) == NULL)
+    {
+        err = "Failed to create bnfp string from result";
+        goto _err;
+    }
+
+    resultString = RedisModule_CreateString(ctx, rs, strlen(rs));
+
+    bnfp_free_string(rs);
+    bnfp_destroy(value);
+    bnfp_destroy(op);
+    bnfp_destroy(res);
+
+    return resultString;
+
+_err:
+    if(value != NULL)
+        bnfp_destroy(value);
+    if(op != NULL)
+        bnfp_destroy(op);
+    if(res != NULL)
+        bnfp_destroy(res);
+    RedisModule_ReplyWithError(ctx, err);
+    return NULL;
+}
+
 
 int RedisModule_OnLoad(RedisModuleCtx *ctx)
 {
