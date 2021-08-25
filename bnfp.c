@@ -190,7 +190,7 @@ const char *bnfp_get_error_string(int err)
         case -3:
             return "Failed to perform addition operation";
         default:
-            return "Unknown error";
+            return "BNFP Unknown error";
     }
 }
 
