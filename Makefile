@@ -26,6 +26,7 @@ clean:
 	rm -rf ex.o
 
 test_bnfp:
+	mkdir -p test_obj
 	$(COMPILER) -g bnfp.c -o test_obj/bnfp -lcrypto -DTEST_MAIN
 	valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes test_obj/bnfp
-	rm -rf test_obj/*
+	rm -rf test_obj
