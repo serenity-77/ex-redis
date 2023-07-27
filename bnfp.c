@@ -59,8 +59,6 @@ int bnfp_from_string(bnfp_t *fn, const char *s, size_t len)
         d++;
     }
 
-    // printf("f: %p, buf: %p\n", f, buf);
-
     if ((f - buf) > 0) {
         f--;
     }
@@ -70,13 +68,8 @@ int bnfp_from_string(bnfp_t *fn, const char *s, size_t len)
     }
 
     if (!buf_len) {
-        // if (*s == '-') {
-        //     f--;
-        // }
-        // printf("f: %s\n", f - 1);
         *f = '0';
         scale = 0;
-        // printf("buf: %s, scale: %d, buf_len: %d, f - buf: %d, s: %s\n", buf, scale, buf_len, f - buf, s);
     } else if (*f == '0' && sep_found) { // hapus akhiran 0
         while (scale && *f == '0') {
             *f = '\0';
