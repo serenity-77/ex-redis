@@ -35,55 +35,59 @@ int bnfp_from_string(bnfp_t *fn, const char *s, size_t len)
     d = (char *) s;
     f = buf;
 
-    while((c = *d))
-    {
-        if(isdigit(c) || (c == '-' && d - s == 0))
-        {
-            if(sep_found) scale++;
-
-            if(c != '0' || buf_len) // skip awalan 0
-            {
-                if(c == '-') f++; // skip satu tempat untuk tanda -
-                else
-                {
+    while ((c = *d)) {
+        if (isdigit(c) || (c == '-' && d - s == 0)) {
+            if (sep_found) {
+                scale++;
+            }
+            if (c != '0' || buf_len) { // skip awalan 0
+                if (c == '-') { // skip satu tempat untuk tanda -
+                    f++;
+                } else {
                     *f++ = c;
                     buf_len++;
                 }
             }
-        }
-        else if(
+        } else if(
             c == '.' && !sep_found &&
             (d - s > 0 && isdigit(*(d - 1)))
-        )
-        {
+        ) {
             sep_found = 1;
-        }
-        else
+        } else {
             return -2;
+        }
         d++;
     }
 
-    if(*s == '-' && buf_len)
+    // printf("f: %p, buf: %p\n", f, buf);
+
+    if ((f - buf) > 0) {
+        f--;
+    }
+
+    if (*s == '-' && buf_len) {
         buf[0] = '-';
+    }
 
-    if(!buf_len)
-    {
-        if(*s == '-') f--;
-        *f++ = '0';
+    if (!buf_len) {
+        // if (*s == '-') {
+        //     f--;
+        // }
+        // printf("f: %s\n", f - 1);
+        *f = '0';
         scale = 0;
-    }
-
-    else if(*(f - 1) == '0' && sep_found) // hapus akhiran 0
-    {
-        while(*--f == '0')
+        // printf("buf: %s, scale: %d, buf_len: %d, f - buf: %d, s: %s\n", buf, scale, buf_len, f - buf, s);
+    } else if (*f == '0' && sep_found) { // hapus akhiran 0
+        while (scale && *f == '0') {
+            *f = '\0';
             scale--;
-        f++;
+            f--;
+        }
     }
 
-    buf[f - buf] = '\0';
-
-    if(!BN_dec2bn(&value, buf))
+    if (!BN_dec2bn(&value, buf)) {
         return -1;
+    }
 
     fn->value = value;
     fn->scale = scale;
@@ -475,14 +479,27 @@ void test_bnfp_1()
         {"-0.00", 0, "0"},
         {"-00.0", 0, "0"},
         {"-0.000", 0, "0"},
+        {"-0.000", 0, "0"},
         {"-000.0", 0, "0"},
         {"-000.00", 0, "0"},
+        {"1000.0", 0, "1000"},
+        {"1000.00", 0, "1000"},
+        {"1000.000", 0, "1000"},
+        {"-1000.0", 0, "-1000"},
+        {"-1000.00", 0, "-1000"},
+        {"-1000.000", 0, "-1000"},
+        {"0.314", 3, "0.314"},
+        {"0.31400", 3, "0.314"},
+        {"-0.314", 3, "-0.314"},
+        {"-0.31400", 3, "-0.314"}
     };
 
     for(i = 0; i < sizeof(args) / sizeof(args[0]); i++)
     {
         fn = bnfp_create();
         r = bnfp_from_string(fn, args[i].value, strlen(args[i].value));
+
+        // printf("fn->scale: %d, args[i].scale: %d\n", fn->scale, args[i].scale);
 
         ASSERT(r == 0);
         ASSERT(fn->scale == args[i].scale);
@@ -603,7 +620,11 @@ void test_bnfp_add()
         {{"10000", 0, "10000"}, {"-0.0002", 4, "-0.0002"}, {"9999.9998", 4, "9999.9998"}},
         {{"10000", 0, "10000"}, {"0.0002", 4, "0.0002"}, {"10000.0002", 4, "10000.0002"}},
         {{"10000.0002", 4, "10000.0002"}, {"-0.01", 2, "-0.01"}, {"9999.9902", 4, "9999.9902"}},
-        {{"10000.0002", 4, "10000.0002"}, {"0.01", 2, "0.01"}, {"10000.0102", 4, "10000.0102"}}
+        {{"10000.0002", 4, "10000.0002"}, {"0.01", 2, "0.01"}, {"10000.0102", 4, "10000.0102"}},
+        {{"1000.0", 0, "1000"}, {"-1.234", 3, "-1.234"}, {"998.766", 3, "998.766"}},
+        {{"1000.0", 0, "1000"}, {"1.234", 3, "1.234"}, {"1001.234", 3, "1001.234"}},
+        {{"-1000.0", 0, "-1000"}, {"1.234", 3, "1.234"}, {"-998.766", 3, "-998.766"}},
+        {{"-1000.0", 0, "-1000"}, {"-1.234", 3, "-1.234"}, {"-1001.234", 3, "-1001.234"}}
     };
 
     for(i = 0; i < sizeof(args) / sizeof(args[0]); i++)
